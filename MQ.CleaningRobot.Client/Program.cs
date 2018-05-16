@@ -22,7 +22,7 @@ namespace MQ.CleaningRobot.Client
 
             var robotInput = JsonSerializer.Deserialize(sourceFile);
 
-            var position = new Position(robotInput.Start.X, robotInput.Start.Y, robotInput.Start.Facing);
+            var position = new RobotPosition(robotInput.Start.X, robotInput.Start.Y, robotInput.Start.Facing);
             var robot = new Robot(position, robotInput.Battery);
 
             var instructions = new CleaningPlanInstructionsDto

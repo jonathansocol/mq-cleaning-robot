@@ -3,11 +3,11 @@ using System;
 
 namespace MQ.CleaningRobot.Models
 {
-    public class Position
+    public class RobotPosition
     {
         private readonly char[] orientations = { 'W', 'N', 'E', 'S' };
 
-        public Position(int x, int y, char facing)
+        public RobotPosition(int x, int y, char facing)
         {
             X = x;
             Y = y;

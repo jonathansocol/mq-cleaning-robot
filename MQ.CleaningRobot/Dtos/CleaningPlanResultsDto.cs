@@ -12,7 +12,7 @@ namespace MQ.CleaningRobot.Dtos
 
         public List<Coordinate> Cleaned { get; set; }
 
-        public Position Final { get; set; }
+        public RobotPosition Final { get; set; }
 
         public int Battery { get; set; }
     }

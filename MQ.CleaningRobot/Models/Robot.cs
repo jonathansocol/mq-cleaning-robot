@@ -23,7 +23,7 @@ namespace MQ.CleaningRobot.Models
 
         #endregion
 
-        public Robot(Position startingPosition, short initialBatteryLevel, string[][] backOffStrategy = null)
+        public Robot(RobotPosition startingPosition, short initialBatteryLevel, string[][] backOffStrategy = null)
         {
             CurrentPosition = startingPosition;
             Battery = new Battery(initialBatteryLevel);
@@ -36,7 +36,7 @@ namespace MQ.CleaningRobot.Models
 
         #region Properties
 
-        public Position CurrentPosition { get; set; }
+        public RobotPosition CurrentPosition { get; set; }
 
         public Battery Battery { get; }
 
