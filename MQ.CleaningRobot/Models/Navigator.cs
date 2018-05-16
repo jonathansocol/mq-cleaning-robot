@@ -21,7 +21,7 @@ namespace MQ.CleaningRobot.Models
                 return true;
             }
 
-            if (position.X > _map.Length - 1 || position.Y > _map.Length - 1)
+            if (position.X > _map[0].Length - 1 || position.Y > _map.Length - 1)
             {
                 return true;
             }
