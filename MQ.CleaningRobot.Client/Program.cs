@@ -8,6 +8,11 @@ namespace MQ.CleaningRobot.Client
     {
         static void Main(string[] args)
         {
+            if (args == null || args.Length < 1)
+            {
+                throw new ArgumentNullException($"Please provide the required arguments for input and output file");
+            }
+
             var sourceFileName = args[0];
             var resultFileName = args[1];
 
