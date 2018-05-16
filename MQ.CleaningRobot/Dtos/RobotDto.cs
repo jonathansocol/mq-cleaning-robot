@@ -1,19 +1,19 @@
-﻿using System;
+﻿using MQ.CleaningRobot.Models;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Text;
 
-namespace MQ.CleaningRobot.Models
+namespace MQ.CleaningRobot.Dtos
 {
-    public class RobotInput
+    public class RobotDto
     {
         public string[][] Map { get; set; }
 
         public string[] Commands { get; set; }
 
-        public RobotPosition Start { get; set; }
+        public PositionDto Start { get; set; }
 
-        [Range(0, 100)]
-        public string Battery { get; set; }
+        public short Battery { get; set; }
     }
 }
