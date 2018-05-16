@@ -4,9 +4,9 @@ using System;
 
 namespace MQ.CleaningRobot.Client.Helpers
 {
-    public class JsonDeserializer
+    public static class JsonSerializer
     {
-        public RobotDto Deserialize(string json)
+        public static RobotDto Deserialize(string json)
         {
             if (string.IsNullOrEmpty(json))
             {
@@ -14,6 +14,11 @@ namespace MQ.CleaningRobot.Client.Helpers
             }
 
             return JsonConvert.DeserializeObject<RobotDto>(json);
+        }
+
+        public static string Serialize(CleaningPlanResultsDto results)
+        {
+            return JsonConvert.SerializeObject(results);
         }
     }
 }

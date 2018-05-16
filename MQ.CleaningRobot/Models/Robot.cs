@@ -1,6 +1,7 @@
 ﻿using MQ.CleaningRobot.Dtos;
 using MQ.CleaningRobot.Enums;
 using MQ.CleaningRobot.Exceptions;
+using System;
 using System.Collections.Generic;
 
 namespace MQ.CleaningRobot.Models
@@ -18,7 +19,7 @@ namespace MQ.CleaningRobot.Models
             new string[] {"TL", "TL", "A"}
         };
 
-        private CollisionDetector _collisionDetector;
+        private Navigator _navigator;
 
         #endregion
 
@@ -31,9 +32,6 @@ namespace MQ.CleaningRobot.Models
             {
                 _backOffStrategy = backOffStrategy;
             }
-
-            VisitedCells = new List<Coordinate>();
-            CleanedCells = new List<Coordinate>();
         }
 
         #region Properties
@@ -42,20 +40,16 @@ namespace MQ.CleaningRobot.Models
 
         public Battery Battery { get; }
 
-        private List<Coordinate> VisitedCells { get; set; }
-
-        private List<Coordinate> CleanedCells { get; set; }
-
         #endregion
 
-        public CleaningPlanResultsDto ExecuteCleaningPlan(string[][] map, Queue<string> instructions)
+        public CleaningPlanResultsDto ExecuteCleaningPlan(CleaningPlanInstructionsDto cleanPlanInstructions)
         {
-            _collisionDetector = new CollisionDetector(map);
+            _navigator = new Navigator(cleanPlanInstructions.Map);
 
+            var instructions = cleanPlanInstructions.Instructions;
             var startingCoordinates = new Coordinate(CurrentPosition.X, CurrentPosition.Y);
 
-            _collisionDetector.SetVisited(startingCoordinates);
-            VisitedCells.Add(startingCoordinates);
+            _navigator.SetVisited(startingCoordinates);
 
             while (Battery.HasCapacity && instructions.Count > 0)
             {
@@ -65,24 +59,39 @@ namespace MQ.CleaningRobot.Models
                 {
                     ExecuteInstruction(instruction);
                 }
-                catch (CollisionException)
+                catch (Exception ex)
                 {
-                    ExecuteBackOffStrategy();
-                }
-                catch (OutOfBatteryException)
-                {
-                    break;
-                }
-                catch (BackOffStrategyFailedException)
-                {
-                    break;
+                    if (ex is CollisionException || ex is OutOfBatteryException)
+                    {
+                        try
+                        {
+                            ExecuteBackOffStrategy();
+                        }
+                        catch (Exception e)
+                        {
+                            if (e is BackOffStrategyFailedException || e is OutOfBatteryException)
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                throw;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw;
+                    }                    
                 }
             }
 
+            var navigatorResults = _navigator.ExportResults();
+
             var result = new CleaningPlanResultsDto
             {
-                Visited = VisitedCells,
-                Cleaned = CleanedCells,
+                Visited = navigatorResults.Visited,
+                Cleaned = navigatorResults.Cleaned,
                 Final = CurrentPosition,
                 Battery = Battery.Level
             };
@@ -96,7 +105,7 @@ namespace MQ.CleaningRobot.Models
             {
                 case "TL":
                     Battery.Drain(1);
-                    Turn(TurnDirection.Left);                    
+                    Turn(TurnDirection.Left);
                     break;
                 case "TR":
                     Battery.Drain(1);
@@ -126,62 +135,48 @@ namespace MQ.CleaningRobot.Models
         {
             var newPosition = CurrentPosition.GetPosition(direction);
 
-            if (_collisionDetector.IsCollision(newPosition))
+            if (_navigator.IsCollision(newPosition))
             {
                 throw new CollisionException();
-            }            
+            }
 
             CurrentPosition.SetPosition(newPosition.X, newPosition.Y);
 
-            if (!_collisionDetector.IsVisited(newPosition))
-            {
-                _collisionDetector.SetVisited(newPosition);
-                VisitedCells.Add(newPosition);
-            }            
+             _navigator.SetVisited(newPosition);            
         }
 
         private void Clean()
-        { 
+        {
             var coordinates = new Coordinate(CurrentPosition.X, CurrentPosition.Y);
 
-            if (!_collisionDetector.IsClean(coordinates))
-            {                
-                CleanedCells.Add(coordinates);
-                _collisionDetector.SetClean(coordinates);
-            }            
+            _navigator.SetClean(coordinates);            
         }
 
-        private void ExecuteBackOffStrategy()
+        private void ExecuteBackOffStrategy(int index = 0)
         {
-            var index = 0;
-
-            while (index <= _backOffStrategy.Length)
-            {
-                var instructions = new Queue<string>(_backOffStrategy[index]);
-               
-                while (Battery.HasCapacity && instructions.Count > 0)
-                {
-                    var instruction = instructions.Dequeue();
-
-                    try
-                    {
-                        ExecuteInstruction(instruction);
-                    }
-                    catch (CollisionException)
-                    {
-                        index++;
-                        break;
-                    }
-                    catch (OutOfBatteryException)
-                    {
-                        break;
-                    }
-                }                
-            }
-
-            if (index > _backOffStrategy.Length - 1)
+            if (index >= _backOffStrategy.Length)
             {
                 throw new BackOffStrategyFailedException();
+            }
+
+            var instructions = new Queue<string>(_backOffStrategy[index]);
+
+            while (Battery.HasCapacity && instructions.Count > 0)
+            {
+                var instruction = instructions.Dequeue();
+
+                try
+                {
+                    ExecuteInstruction(instruction);
+                }
+                catch (CollisionException)
+                {
+                    var next = index + 1;
+
+                    ExecuteBackOffStrategy(next);                    
+
+                    break;
+                }
             }
         }
     }
