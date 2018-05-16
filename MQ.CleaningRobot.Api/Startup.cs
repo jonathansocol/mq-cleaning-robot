@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MQ.CleaningRobot.Services;
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace MQ.CleaningRobot.Api
 {
@@ -27,15 +28,25 @@ namespace MQ.CleaningRobot.Api
             services.AddScoped(typeof(CleaningService));
 
             services.AddMvc();
+
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new Info { Title = "Cleaning Robot API", Version = "v1" });
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            if (env.IsDevelopment())
+            app.UseSwagger();
+
+            var swaggerPath = Configuration["SwaggerPath"];
+
+            app.UseSwaggerUI(c =>
             {
-                app.UseDeveloperExceptionPage();
-            }
+                c.SwaggerEndpoint(swaggerPath, "Cleaning Robot API V1");
+                c.RoutePrefix = string.Empty;
+            });
 
             app.UseMvc();
         }
