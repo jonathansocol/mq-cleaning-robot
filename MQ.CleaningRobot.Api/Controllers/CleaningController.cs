@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using MQ.CleaningRobot.Dtos;
 using MQ.CleaningRobot.Models;
+using MQ.CleaningRobot.Services;
 using Newtonsoft.Json;
 
 namespace MQ.CleaningRobot.Api.Controllers
@@ -9,26 +10,17 @@ namespace MQ.CleaningRobot.Api.Controllers
     [Route("api/[controller]")]
     public class CleaningController : Controller
     {
-        [HttpPost]
-        public ActionResult Post([FromBody]string json)
+        private readonly CleaningService _cleaningService;
+
+        public CleaningController(CleaningService cleaningService)
         {
-            if (string.IsNullOrEmpty(json))
-            {
-                return BadRequest();
-            }
+            _cleaningService = cleaningService;
+        }
 
-            var robotInput = JsonConvert.DeserializeObject<RobotDto>(json);
-
-            var position = new RobotPosition(robotInput.Start.X, robotInput.Start.Y, robotInput.Start.Facing);
-            var robot = new Robot(position, robotInput.Battery);
-
-            var instructions = new CleaningPlanInstructionsDto
-            {
-                Map = robotInput.Map,
-                Instructions = new Queue<string>(robotInput.Commands)
-            };
-
-            var results = robot.ExecuteCleaningPlan(instructions);
+        [HttpPost]
+        public ActionResult Post([FromBody]RobotDto robotInput)
+        {
+            var results = _cleaningService.ExecuteCleaningProcess(robotInput);
 
             return Ok(results);
         }        

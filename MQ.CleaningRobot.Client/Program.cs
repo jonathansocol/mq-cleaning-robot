@@ -1,9 +1,6 @@
 ﻿using MQ.CleaningRobot.Client.Helpers;
-using MQ.CleaningRobot.Dtos;
-using MQ.CleaningRobot.Models;
+using MQ.CleaningRobot.Services;
 using System;
-using System.Collections.Generic;
-using System.IO;
 
 namespace MQ.CleaningRobot.Client
 {
@@ -22,18 +19,11 @@ namespace MQ.CleaningRobot.Client
 
             var robotInput = JsonSerializer.Deserialize(sourceFile);
 
-            var position = new RobotPosition(robotInput.Start.X, robotInput.Start.Y, robotInput.Start.Facing);
-            var robot = new Robot(position, robotInput.Battery);
-
-            var instructions = new CleaningPlanInstructionsDto
-            {
-                Map = robotInput.Map,
-                Instructions = new Queue<string>(robotInput.Commands)
-            };
+            var cleaningService = new CleaningService();
 
             Console.WriteLine("Executing cleaning plan");
 
-            var results = robot.ExecuteCleaningPlan(instructions);
+            var results = cleaningService.ExecuteCleaningProcess(robotInput);
             var jsonResults = JsonSerializer.Serialize(results);
 
             Console.WriteLine($"Exporting results to { resultFileName }");
@@ -41,6 +31,7 @@ namespace MQ.CleaningRobot.Client
             FileManager.ExportJsonFile(jsonResults, resultFileName);
 
             Console.WriteLine($"Results exported to { resultFileName }");
+            Console.WriteLine("Press any key to close the window");
 
             Console.ReadLine();
         }
